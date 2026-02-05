@@ -177,7 +177,7 @@ NetProfile_Surv <- NetProfile_Pat %>%
                   survminer::ggsurvplot(
                     data = .,
                     fit = survival::survfit(survival::Surv(EFStime, EFS) ~ Group, data = .),
-                    ylab = 'Event-free Survival (%)', xlab = 'Months', break.time.by = 24, 
+                    ylab = 'Event-free Survival', xlab = 'Months', break.time.by = 24, 
                     # legend.title = Subset,
                     # legend.labs = paste0(Feature, c(' Low', ' High')),
                     palette = c('#D6C7C2', '#7DA9B8', '#A94D42'),
