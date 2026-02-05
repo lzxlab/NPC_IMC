@@ -4,19 +4,8 @@ library(data.table)
 source('0.Helpers.R')
 
 MT_CT <- qs::qread('SingleCellDataFrame.qs')
-
-LEVELS <- c('CT0', 'CT1', 'CT2', 'CT3', 'CT4') %>% 
-  purrr::set_names() %>% 
-  purrr::map(\(X) levels(MT_CT[[X]])) %>% 
-  c(list(Channel = c(
-    'EpCAM', 'EGFR', 'BetaCatenin', 
-    'Vimentin', 'CollagenI', 'AlphaSMA', 'CD31', 
-    'CD45', 'CD11b', 'CD15', 'CD14', 'CD68', 'CD163', 'CD11c', 'HLADR', 
-    'CD3', 'CD4', 'CD8a', 'CD45RO', 'FoxP3', 'CD56', 'GranzymeB','CD20', 'CD38', 'CD138', 
-    'ICOS', 'PD1', 'LAG3', 'Tim3', 'Ki67', 'p53', 'PDL1', 'LMP1', 'Caspase3cleaved')))
-
+LEVELS <- qs::qread('AnnotationLevels.qs')
 ClinicalInfo_ROI <- data.table::fread('ClinicalInfo.csv')
-
 ClinicalInfo_Pat <- ClinicalInfo_ROI %>% 
   dplyr::select(-ROI_ID, -TLS_ROI) %>% 
   dplyr::distinct()
