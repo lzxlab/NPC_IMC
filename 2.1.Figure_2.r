@@ -29,39 +29,61 @@ MT_CT %>%
   dplyr::mutate(Y_position = -Y_position) %>%  
   dplyr::nest_by(ROI_ID) %>% 
   dplyr::arrange(ROI_ID %>% match(c('T063_ROI2', 'T174_ROI1', 'T057_ROI2'))) %>% 
+  dplyr::mutate(points_sf = data %>% 
+                  sf::st_as_sf(coords = c("X_position", "Y_position"), remove = F) %>% 
+                  list(),
+                bbox = matrix(c(0, 0, 
+                                500, 0, 
+                                500, -500, 
+                                0, -500, 
+                                0, 0), 
+                              ncol = 2, byrow = TRUE) %>% 
+                  list() %>% 
+                  sf::st_polygon() %>% 
+                  sf::st_sfc() %>% 
+                  list(),
+                points_voronoi = points_sf %>%
+                  sf::st_union() %>%
+                  sf::st_voronoi(envelope = bbox) %>%
+                  sf::st_collection_extract("POLYGON") %>%
+                  sf::st_sf() %>%
+                  sf::st_join(points_sf) %>% 
+                  list(),
+                points_buffered = points_sf %>%
+                  sf::st_buffer(dist = 10) %>%
+                  sf::st_union() %>% 
+                  list(),
+                points_final = points_voronoi %>% 
+                  sf::st_intersection(points_buffered) %>%
+                  sf::st_intersection(bbox) %>%
+                  list()
+  ) %>% 
+  dplyr::arrange(ROI_ID %>% match(c('T109_ROI1', 'T109_ROI2'))) %>% 
   dplyr::mutate(
-    PLOT1 = {data %>% 
-        ggplot(aes(x = X_position, y = Y_position, group = -1L)) +
-        ggforce::geom_voronoi_tile(aes(fill = CT3), show.legend = T,
-                                   bound = data.frame(x = c(0, 500, 500, 0),
-                                                      y = c(0, 0, -500, -500))) +
+    PLOT1 = {points_final %>% 
+        ggplot() +
+        geom_sf(aes(fill = CT3), color = NA) +
         scale_fill_manual(name = ROI_ID,
-                           values = 
-                             c('#3B597AFF', 
-                               paletteer::paletteer_d("Redmonder::sPBIGn", n = 3)[-1],
-                               paletteer::paletteer_d("Redmonder::sPBIYl", n = 6)[-1],
-                               paletteer::paletteer_d("Redmonder::sPBIRd", n = 8)[-1],
-                               'grey70') %>% 
-                             setNames(LEVELS$CT3), 
-                          drop = F) +
-        theme_void() +
-        coord_equal() +
-        guides(fill = guide_legend(ncol = 1))
+                          values =
+                            c('#3B597AFF',
+                              paletteer::paletteer_d("Redmonder::sPBIGn", n = 3)[-1],
+                              paletteer::paletteer_d("Redmonder::sPBIYl", n = 6)[-1],
+                              paletteer::paletteer_d("Redmonder::sPBIRd", n = 8)[-1],
+                              'grey70') %>%
+                            setNames(LEVELS$CT3),
+                          drop = F)
     } %>% list(),
-    PLOT2 = {data %>% 
-        ggplot(aes(x = X_position, y = Y_position, group = -1L)) +
-        ggforce::geom_voronoi_tile(aes(fill = SA), show.legend = T,
-                                   bound = data.frame(x = c(0, 500, 500, 0),
-                                                      y = c(0, 0, -500, -500))) +
-        scale_fill_manual(values = c("#762A83", "#1AE4B6", "#1965B0") %>% 
+    PLOT2 = {points_final %>% 
+        ggplot() +
+        geom_sf(aes(fill = SA), color = NA) +
+        scale_fill_manual(values = c("#762A83", "#1AE4B6", "#1965B0") %>%
                             setNames(LEVELS$SA[1:3]),
-                          na.value = 'grey70', drop = F) +
-        theme_void() +
-        coord_equal() +
-        guides(fill = guide_legend(ncol = 1))
+                          na.value = 'grey70', drop = F)
     } %>% list()
   ) %>% 
   dplyr::mutate(PLOTS = {patchwork::wrap_plots(PLOT1, PLOT2, nrow = 1, guides = "collect") &
+      theme_void() &
+      guides(fill = guide_legend(ncol = 1)) &
       theme(plot.margin = unit(c(0,0,0,0), "mm"))} %>% 
         list()
   ) %>% 

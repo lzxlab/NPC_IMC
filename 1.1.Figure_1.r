@@ -65,6 +65,66 @@ HM_CTxChannel %>%
 dev.off()
 
 
+# Figure 1c
+pdf('Fig1c.pdf', width = 15, height = 6)
+MT_CT %>% 
+  dplyr::filter(ROI_ID %in% c('T109_ROI1', 'T109_ROI2')) %>% 
+  dplyr::mutate(Y_position = -Y_position) %>%  
+  dplyr::nest_by(ROI_ID) %>% 
+  dplyr::arrange(ROI_ID %>% match(c('T063_ROI2', 'T174_ROI1', 'T057_ROI2'))) %>% 
+  dplyr::mutate(points_sf = data %>% 
+                  sf::st_as_sf(coords = c("X_position", "Y_position"), remove = F) %>% 
+                  list(),
+                bbox = matrix(c(0, 0, 
+                                500, 0, 
+                                500, -500, 
+                                0, -500, 
+                                0, 0), 
+                              ncol = 2, byrow = TRUE) %>% 
+                  list() %>% 
+                  sf::st_polygon() %>% 
+                  sf::st_sfc() %>% 
+                  list(),
+                points_voronoi = points_sf %>%
+                  sf::st_union() %>%
+                  sf::st_voronoi(envelope = bbox) %>%
+                  sf::st_collection_extract("POLYGON") %>%
+                  sf::st_sf() %>%
+                  sf::st_join(points_sf) %>% 
+                  list(),
+                points_buffered = points_sf %>%
+                  sf::st_buffer(dist = 10) %>%
+                  sf::st_union() %>% 
+                  list(),
+                points_final = points_voronoi %>% 
+                  sf::st_intersection(points_buffered) %>%
+                  sf::st_intersection(bbox) %>%
+                  list()
+  ) %>% 
+  dplyr::arrange(ROI_ID %>% match(c('T109_ROI1', 'T109_ROI2'))) %>% 
+  dplyr::mutate(
+    PLOT = {points_final %>% 
+        ggplot() +
+        geom_sf(aes(fill = CT3), color = NA) +
+        scale_fill_manual(name = ROI_ID,
+                          values =
+                            c('#3B597AFF',
+                              paletteer::paletteer_d("Redmonder::sPBIGn", n = 3)[-1],
+                              paletteer::paletteer_d("Redmonder::sPBIYl", n = 6)[-1],
+                              paletteer::paletteer_d("Redmonder::sPBIRd", n = 8)[-1],
+                              'grey70') %>%
+                            setNames(LEVELS$CT3),
+                          drop = F) +
+        theme_void() +
+        guides(fill = guide_legend(ncol = 1)) +
+        theme(plot.margin = unit(c(0,0,0,0), "mm"))
+    } %>% list()
+  ) %>% 
+  dplyr::pull(PLOT) %>% 
+  purrr::walk(print)
+dev.off()
+
+
 # Figure 1d
 pdf('Fig1d.pdf', height = 5, width = 27)
 MT_CT %>%
