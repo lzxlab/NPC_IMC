@@ -329,6 +329,7 @@ TherapeuticBenefits_Results <- AllFeatures %>%
                   list()) %>% 
   dplyr::ungroup()
 
+
 pdf('Fig4g.pdf', width = 6, height = 8)
 TherapeuticBenefits_Results %>% 
   dplyr::filter(p_coxph_Interaction < 0.05) %>% 
