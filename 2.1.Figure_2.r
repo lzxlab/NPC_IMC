@@ -58,7 +58,6 @@ MT_CT %>%
                   sf::st_intersection(bbox) %>%
                   list()
   ) %>% 
-  dplyr::arrange(ROI_ID %>% match(c('T109_ROI1', 'T109_ROI2'))) %>% 
   dplyr::mutate(
     PLOT1 = {points_final %>% 
         ggplot() +
